@@ -58,43 +58,46 @@ export default function Login() {
 
   if (user) {
     return (
-      <div style={{ fontFamily: 'system-ui, sans-serif', padding: '40px 20px', textAlign: 'center' }}>
-        <h1>Signed in</h1>
-        <p>{user.email}</p>
-        <button onClick={handleSignOut}>Sign out</button>
+      <div className="screen-center">
+        <div className="card">
+          <h1>Signed in</h1>
+          <p className="email-chip">{user.email}</p>
+          <button className="btn ghost" onClick={handleSignOut}>Sign out</button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div style={{ fontFamily: 'system-ui, sans-serif', padding: '40px 20px', maxWidth: 360, margin: '0 auto' }}>
-      <h1 style={{ textAlign: 'center' }}>Sign in</h1>
-      <form onSubmit={handleSubmit}>
-        <label style={{ display: 'block', marginBottom: 12 }}>
-          Email
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            style={{ display: 'block', width: '100%', padding: 8, marginTop: 4 }}
-          />
-        </label>
-        <label style={{ display: 'block', marginBottom: 12 }}>
-          Password
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            style={{ display: 'block', width: '100%', padding: 8, marginTop: 4 }}
-          />
-        </label>
-        {error && <p style={{ color: '#b42318' }}>{error}</p>}
-        <button type="submit" disabled={busy} style={{ width: '100%', padding: 10 }}>
-          {busy ? 'Signing in…' : 'Sign in'}
-        </button>
-      </form>
+    <div className="screen-center">
+      <div className="card">
+        <h1>Welcome back</h1>
+        <p className="lede">Sign in to your wholesale account</p>
+        <form onSubmit={handleSubmit}>
+          <div className="field">
+            <label>Email</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+          <div className="field">
+            <label>Password</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+          {error && <p className="error-text">{error}</p>}
+          <button className="btn accent" type="submit" disabled={busy}>
+            {busy ? 'Signing in…' : 'Sign in'}
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
