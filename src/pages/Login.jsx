@@ -1,12 +1,9 @@
 import { useState } from 'react';
-import {
-  signInWithEmailAndPassword,
-  signOut,
-  onAuthStateChanged,
-} from 'firebase/auth';
-import { auth } from '../lib/firebase.js';
+import { useNavigate } from 'react-router-dom';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { auth, db } from '../lib/firebase.js';
 
-// Firebase's error codes, turned into messages a non-technical person can read.
 function friendlyError(code) {
   switch (code) {
     case 'auth/invalid-email':
@@ -30,16 +27,11 @@ const inputClass =
   'focus:outline-none focus:border-brand focus:bg-white focus:ring-4 focus:ring-brand-soft';
 
 export default function Login() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [user, setUser] = useState(null);
-
-  // Keeps `user` in sync if Firebase already has someone signed in (e.g. after a refresh).
-  useState(() => {
-    onAuthStateChanged(auth, (u) => setUser(u));
-  });
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -47,34 +39,24 @@ export default function Login() {
     setBusy(true);
     try {
       const result = await signInWithEmailAndPassword(auth, email, password);
-      setUser(result.user);
+
+      // Look up the role and route accordingly.
+      const snap = await getDoc(doc(db, 'users', result.user.uid));
+      if (!snap.exists()) {
+        setError('No role assigned to this account. Contact the platform admin.');
+        return;
+      }
+
+      const role = snap.data().role;
+      if (role === 'platform') navigate('/platform', { replace: true });
+      else if (role === 'wholesaler') navigate('/wholesaler', { replace: true });
+      else if (role === 'retailer') navigate('/retailer', { replace: true });
+      else setError('Unknown role: ' + role);
     } catch (err) {
       setError(friendlyError(err.code));
     } finally {
       setBusy(false);
     }
-  }
-
-  async function handleSignOut() {
-    await signOut(auth);
-    setUser(null);
-  }
-
-  if (user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center px-4 py-6">
-        <div className="w-full max-w-sm rounded-2xl border border-line bg-white p-7 shadow-lg shadow-ink/5">
-          <h1 className="text-center text-2xl font-bold mb-1">Signed in</h1>
-          <p className="text-center text-sm text-muted mb-5">{user.email}</p>
-          <button
-            className="block w-full rounded-lg border border-line bg-transparent px-4 py-2.5 text-sm font-semibold text-brand"
-            onClick={handleSignOut}
-          >
-            Sign out
-          </button>
-        </div>
-      </div>
-    );
   }
 
   return (
