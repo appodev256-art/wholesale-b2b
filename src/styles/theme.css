@@ -1,120 +1,29 @@
-:root {
-  --paper: #ECEEF0;
-  --ink: #161B22;
-  --muted: #57626F;
-  --line: #D7DBE0;
-  --brand: #1F3A5F;
-  --brand-ink: #EAF0F8;
-  --brand-soft: #E3EAF3;
-  --accent: #C97A2B;
-  --accent-ink: #FFFFFF;
-  --card: #FFFFFF;
-  --danger: #B42318;
-  --radius: 14px;
+@import "tailwindcss";
+
+/* Our brand tokens — these generate matching utilities automatically,
+   e.g. --color-brand below gives you bg-brand, text-brand, border-brand. */
+@theme {
+  --color-paper: #ECEEF0;
+  --color-ink: #161B22;
+  --color-muted: #57626F;
+  --color-line: #D7DBE0;
+  --color-brand: #1F3A5F;
+  --color-brand-ink: #EAF0F8;
+  --color-brand-soft: #E3EAF3;
+  --color-accent: #C97A2B;
+  --color-danger: #B42318;
+
+  --font-display: 'Space Grotesk', system-ui, sans-serif;
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 }
 
-* { box-sizing: border-box; }
-
 body {
-  margin: 0;
-  background: var(--paper);
-  color: var(--ink);
-  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  line-height: 1.5;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
 }
 
 h1, h2, h3 {
-  font-family: 'Space Grotesk', system-ui, sans-serif;
-  font-weight: 700;
+  font-family: var(--font-display);
   letter-spacing: -0.01em;
-  margin: 0 0 6px;
-}
-
-p { margin: 0 0 12px; color: var(--muted); }
-
-/* Centers a single card on the screen — used by the sign-in page and
-   anything else that's just one form, one action. */
-.screen-center {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px 16px;
-}
-
-.card {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: 28px 24px;
-  width: 100%;
-  max-width: 360px;
-  box-shadow: 0 1px 2px rgba(22, 27, 34, 0.04), 0 8px 24px rgba(22, 27, 34, 0.06);
-}
-
-.card h1 { text-align: center; font-size: 1.6rem; margin-bottom: 4px; }
-.card .lede { text-align: center; margin-bottom: 20px; }
-
-.field { display: block; margin-bottom: 16px; }
-.field label {
-  display: block;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--muted);
-  margin-bottom: 6px;
-}
-.field input {
-  display: block;
-  width: 100%;
-  padding: 11px 12px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: var(--paper);
-  font-size: 16px;
-  color: var(--ink);
-  font-family: inherit;
-}
-.field input:focus {
-  outline: none;
-  border-color: var(--brand);
-  background: var(--card);
-  box-shadow: 0 0 0 3px var(--brand-soft);
-}
-
-.btn {
-  display: block;
-  width: 100%;
-  padding: 12px 16px;
-  border: none;
-  border-radius: 10px;
-  background: var(--brand);
-  color: var(--brand-ink);
-  font-family: inherit;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-}
-.btn:disabled { opacity: 0.6; cursor: default; }
-.btn.accent { background: var(--accent); color: var(--accent-ink); }
-.btn.ghost {
-  background: transparent;
-  color: var(--brand);
-  border: 1px solid var(--line);
-}
-
-.error-text {
-  font-size: 13.5px;
-  color: var(--danger);
-  background: #FBEAE8;
-  border-radius: 8px;
-  padding: 8px 10px;
-  margin-bottom: 14px;
-}
-
-.email-chip {
-  display: block;
-  text-align: center;
-  font-size: 14px;
-  color: var(--muted);
-  margin-bottom: 20px;
 }
