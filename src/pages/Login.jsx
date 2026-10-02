@@ -25,6 +25,10 @@ function friendlyError(code) {
   }
 }
 
+const inputClass =
+  'block w-full rounded-lg border border-line bg-paper px-3 py-2.5 text-base text-ink ' +
+  'focus:outline-none focus:border-brand focus:bg-white focus:ring-4 focus:ring-brand-soft';
+
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -58,42 +62,57 @@ export default function Login() {
 
   if (user) {
     return (
-      <div className="screen-center">
-        <div className="card">
-          <h1>Signed in</h1>
-          <p className="email-chip">{user.email}</p>
-          <button className="btn ghost" onClick={handleSignOut}>Sign out</button>
+      <div className="min-h-screen flex items-center justify-center px-4 py-6">
+        <div className="w-full max-w-sm rounded-2xl border border-line bg-white p-7 shadow-lg shadow-ink/5">
+          <h1 className="text-center text-2xl font-bold mb-1">Signed in</h1>
+          <p className="text-center text-sm text-muted mb-5">{user.email}</p>
+          <button
+            className="block w-full rounded-lg border border-line bg-transparent px-4 py-2.5 text-sm font-semibold text-brand"
+            onClick={handleSignOut}
+          >
+            Sign out
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="screen-center">
-      <div className="card">
-        <h1>Welcome back</h1>
-        <p className="lede">Sign in to your wholesale account</p>
+    <div className="min-h-screen flex items-center justify-center px-4 py-6">
+      <div className="w-full max-w-sm rounded-2xl border border-line bg-white p-7 shadow-lg shadow-ink/5">
+        <h1 className="text-center text-2xl font-bold mb-1">Welcome back</h1>
+        <p className="text-center text-sm text-muted mb-5">Sign in to your wholesale account</p>
         <form onSubmit={handleSubmit}>
-          <div className="field">
-            <label>Email</label>
+          <div className="mb-4">
+            <label className="block mb-1.5 text-xs font-semibold text-muted">Email</label>
             <input
               type="email"
+              className={inputClass}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
             />
           </div>
-          <div className="field">
-            <label>Password</label>
+          <div className="mb-4">
+            <label className="block mb-1.5 text-xs font-semibold text-muted">Password</label>
             <input
               type="password"
+              className={inputClass}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
             />
           </div>
-          {error && <p className="error-text">{error}</p>}
-          <button className="btn accent" type="submit" disabled={busy}>
+          {error && (
+            <p className="mb-3.5 rounded-lg bg-danger/10 px-3 py-2 text-[13.5px] text-danger">
+              {error}
+            </p>
+          )}
+          <button
+            type="submit"
+            disabled={busy}
+            className="block w-full rounded-lg bg-accent px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
+          >
             {busy ? 'Signing in…' : 'Sign in'}
           </button>
         </form>
