@@ -45,9 +45,9 @@ export default function Shop() {
         }
         setProducts(all);
       } catch (err) {
-        console.error(err);
-        setError('Could not load the shop right now.');
-      } finally {
+  console.error(err);
+  setError('Shop error: ' + (err?.message || err?.code || String(err)));
+} finally {
         setLoading(false);
       }
     }
