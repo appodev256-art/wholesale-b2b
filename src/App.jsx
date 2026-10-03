@@ -3,6 +3,7 @@ import { useRole } from './lib/useRole.js';
 import Login from './pages/Login.jsx';
 import WholesalerDashboard from './pages/WholesalerDashboard.jsx';
 import Register from './pages/Register.jsx';
+import Shop from './pages/Shop.jsx';
 
 function Loading() {
   return (
@@ -49,6 +50,7 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+<Route path="/shop" element={<Shop />} />
       <Route
         path="/platform"
         element={
@@ -73,8 +75,8 @@ export default function App() {
           </RequireRole>
         }
       />
-      <Route path="/" element={<Navigate to="/login" replace />} />
-      <Route path="*" element={<Navigate to="/login" replace />} />
+      <Route path="/" element={<Navigate to="/shop" replace />} />
+<Route path="*" element={<Navigate to="/shop" replace />} />
     </Routes>
   );
 }
