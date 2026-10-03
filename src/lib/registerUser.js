@@ -9,7 +9,7 @@ export function cleanPhone(input) {
 
 // Creates:
 //   users/{uid}                { email, role, createdAt }
-//   wholesalers/{uid}          { shopName, ownerName, whatsappNumber, email, approved:false, createdAt }  (wholesaler only)
+//   wholesalers/{uid}          { shopName, ownerName, whatsappNumber, email, approved:false, rejected:false, createdAt }  (wholesaler only)
 export async function registerUser({ role, email, password, shopName, ownerName, whatsappNumber }) {
   const cred = await createUserWithEmailAndPassword(auth, email, password);
   const uid = cred.user.uid;
@@ -21,16 +21,16 @@ export async function registerUser({ role, email, password, shopName, ownerName,
   });
 
   if (role === 'wholesaler') {
-  await setDoc(doc(db, 'wholesalers', uid), {
-    shopName,
-    ownerName,
-    whatsappNumber: cleanPhone(whatsappNumber),
-    email,
-    approved: false,
-    rejected: false,
-    createdAt: serverTimestamp(),
-  });
-}
+    await setDoc(doc(db, 'wholesalers', uid), {
+      shopName,
+      ownerName,
+      whatsappNumber: cleanPhone(whatsappNumber),
+      email,
+      approved: false,
+      rejected: false,
+      createdAt: serverTimestamp(),
+    });
+  }
 
   return cred.user;
 }
