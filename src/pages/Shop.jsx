@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { collection, getDocs, orderBy, query, where } from 'firebase/firestore';
+import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../lib/firebase.js';
 
 function formatPrice(n) {
@@ -37,17 +37,24 @@ export default function Shop() {
           const pSnap = await getDocs(
             query(
               collection(db, 'products'),
-              where('wholesalerId', 'in', chunk),
-              orderBy('createdAt', 'desc')
+              where('wholesalerId', 'in', chunk)
             )
           );
           pSnap.forEach((d) => all.push({ id: d.id, ...d.data() }));
         }
+
+        // Sort newest first, client-side (no index needed).
+        all.sort((a, b) => {
+          const at = a.createdAt?.seconds ?? 0;
+          const bt = b.createdAt?.seconds ?? 0;
+          return bt - at;
+        });
+
         setProducts(all);
       } catch (err) {
-  console.error(err);
-  setError('Shop error: ' + (err?.message || err?.code || String(err)));
-} finally {
+        console.error(err);
+        setError('Could not load the shop right now.');
+      } finally {
         setLoading(false);
       }
     }
