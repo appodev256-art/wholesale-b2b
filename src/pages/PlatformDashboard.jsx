@@ -5,7 +5,6 @@ import {
   collection,
   doc,
   getDocs,
-  orderBy,
   query,
   updateDoc,
   where,
@@ -68,16 +67,21 @@ export default function PlatformDashboard() {
 
   async function loadAll() {
     try {
-      const [pendingSnap, approvedSnap, rejectedSnap, retailersSnap] = await Promise.all([
-        getDocs(query(collection(db, 'wholesalers'), where('approved', '==', false), where('rejected', '==', false))),
-        getDocs(query(collection(db, 'wholesalers'), where('approved', '==', true))),
-        getDocs(query(collection(db, 'wholesalers'), where('rejected', '==', true))),
+      // Single-field queries only — no composite index needed.
+      // Client-side filtering for the approved/rejected split.
+      const [wholesalersSnap, retailersSnap] = await Promise.all([
+        getDocs(collection(db, 'wholesalers')),
         getDocs(query(collection(db, 'users'), where('role', '==', 'retailer'))),
       ]);
 
-      setPending(pendingSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
-      setApproved(approvedSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
-      setRejected(rejectedSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      const allWholesalers = wholesalersSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+
+      setPending(
+        allWholesalers.filter((s) => s.approved !== true && s.rejected !== true)
+      );
+      setApproved(allWholesalers.filter((s) => s.approved === true));
+      setRejected(allWholesalers.filter((s) => s.rejected === true));
+
       setRetailers(retailersSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
     } catch (err) {
       console.error(err);
