@@ -8,7 +8,6 @@ import {
   collection,
   query,
   where,
-  orderBy,
   getDocs,
   serverTimestamp,
 } from 'firebase/firestore';
@@ -28,7 +27,6 @@ export default function WholesalerDashboard() {
   const [products, setProducts] = useState([]);
   const [productsLoading, setProductsLoading] = useState(true);
 
-  // Add-product form state
   const [showForm, setShowForm] = useState(false);
   const [productName, setProductName] = useState('');
   const [price, setPrice] = useState('');
@@ -37,7 +35,6 @@ export default function WholesalerDashboard() {
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
 
-  // Load shop profile
   useEffect(() => {
     async function loadShop() {
       try {
@@ -59,22 +56,23 @@ export default function WholesalerDashboard() {
     loadShop();
   }, [navigate]);
 
-  // Load this wholesaler's products (once we know they're approved)
   useEffect(() => {
     async function loadProducts() {
-      if (!shop || !shop.approved) {
+      if (!shop || !shop.approved || shop.rejected) {
         setProductsLoading(false);
         return;
       }
       try {
         const uid = auth.currentUser.uid;
-        const q = query(
-          collection(db, 'products'),
-          where('wholesalerId', '==', uid),
-          orderBy('createdAt', 'desc')
-        );
+        const q = query(collection(db, 'products'), where('wholesalerId', '==', uid));
         const snap = await getDocs(q);
-        setProducts(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+        const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        list.sort((a, b) => {
+          const at = a.createdAt?.seconds ?? 0;
+          const bt = b.createdAt?.seconds ?? 0;
+          return bt - at;
+        });
+        setProducts(list);
       } catch (err) {
         console.error(err);
       } finally {
@@ -156,6 +154,33 @@ export default function WholesalerDashboard() {
     );
   }
 
+  // Rejected — a clear, final screen.
+  if (shop.rejected) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <div className="w-full max-w-sm rounded-2xl border border-line bg-white p-7 text-center">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-danger/10 text-danger text-2xl">
+            ✕
+          </div>
+          <h1 className="text-xl font-bold mb-2">Your application was rejected</h1>
+          <p className="text-sm text-muted mb-5">
+            We're sorry, {shop.ownerName}. Your shop{' '}
+            <span className="font-semibold text-ink">{shop.shopName}</span> wasn't
+            approved. If you believe this is a mistake, please contact the
+            platform admin.
+          </p>
+          <button
+            onClick={handleSignOut}
+            className="w-full rounded-lg border border-line px-4 py-2.5 text-sm font-semibold text-brand"
+          >
+            Sign out
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Pending approval.
   if (!shop.approved) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
