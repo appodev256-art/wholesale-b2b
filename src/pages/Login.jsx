@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase.js';
@@ -98,6 +98,12 @@ export default function Login() {
             {busy ? 'Signing in…' : 'Sign in'}
           </button>
         </form>
+<p className="text-center text-sm text-muted mt-5">
+  New here?{' '}
+  <Link to="/register" className="text-brand font-semibold">
+    Create an account
+  </Link>
+</p>
       </div>
     </div>
   );
