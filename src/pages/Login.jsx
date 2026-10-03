@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase.js';
@@ -28,6 +28,9 @@ const inputClass =
 
 export default function Login() {
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const next = params.get('next');
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
@@ -40,18 +43,27 @@ export default function Login() {
     try {
       const result = await signInWithEmailAndPassword(auth, email, password);
 
-      // Look up the role and route accordingly.
       const snap = await getDoc(doc(db, 'users', result.user.uid));
       if (!snap.exists()) {
-        setError('No role assigned to this account. Contact the platform admin.');
+        setError('No role assigned to this account.');
         return;
       }
 
       const role = snap.data().role;
-      if (role === 'platform') navigate('/platform', { replace: true });
-      else if (role === 'wholesaler') navigate('/wholesaler', { replace: true });
-      else if (role === 'retailer') navigate('/retailer', { replace: true });
-      else setError('Unknown role: ' + role);
+
+      // If the user came from a specific page (e.g. /shop after tapping Order),
+      // send them there. Otherwise, use their role's default landing page.
+      if (next) {
+        navigate(next, { replace: true });
+      } else if (role === 'platform') {
+        navigate('/platform', { replace: true });
+      } else if (role === 'wholesaler') {
+        navigate('/wholesaler', { replace: true });
+      } else if (role === 'retailer') {
+        navigate('/shop', { replace: true });
+      } else {
+        setError('Unknown role: ' + role);
+      }
     } catch (err) {
       setError(friendlyError(err.code));
     } finally {
@@ -98,12 +110,12 @@ export default function Login() {
             {busy ? 'Signing in…' : 'Sign in'}
           </button>
         </form>
-<p className="text-center text-sm text-muted mt-5">
-  New here?{' '}
-  <Link to="/register" className="text-brand font-semibold">
-    Create an account
-  </Link>
-</p>
+        <p className="text-center text-sm text-muted mt-5">
+          New here?{' '}
+          <Link to="/register" className="text-brand font-semibold">
+            Create an account
+          </Link>
+        </p>
       </div>
     </div>
   );
