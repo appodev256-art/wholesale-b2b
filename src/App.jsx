@@ -1,9 +1,10 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { useRole } from './lib/useRole.js';
 import Login from './pages/Login.jsx';
-import WholesalerDashboard from './pages/WholesalerDashboard.jsx';
 import Register from './pages/Register.jsx';
 import Shop from './pages/Shop.jsx';
+import WholesalerDashboard from './pages/WholesalerDashboard.jsx';
+import PlatformDashboard from './pages/PlatformDashboard.jsx';
 
 function Loading() {
   return (
@@ -23,17 +24,6 @@ function RequireRole({ allow, children }) {
   return children;
 }
 
-function PlatformHome() {
-  return (
-    <div className="min-h-screen flex items-center justify-center px-4">
-      <div className="rounded-2xl border border-line bg-white p-8 text-center">
-        <h1 className="text-2xl font-bold mb-2">Platform Admin</h1>
-        <p className="text-muted">Dashboard coming next.</p>
-      </div>
-    </div>
-  );
-}
-
 function RetailerHome() {
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
@@ -50,23 +40,26 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
-<Route path="/shop" element={<Shop />} />
+      <Route path="/shop" element={<Shop />} />
+
       <Route
         path="/platform"
         element={
           <RequireRole allow="platform">
-            <PlatformHome />
+            <PlatformDashboard />
           </RequireRole>
         }
       />
-    <Route
-  path="/wholesaler"
-  element={
-    <RequireRole allow="wholesaler">
-      <WholesalerDashboard />
-    </RequireRole>
-  }
-/>
+
+      <Route
+        path="/wholesaler"
+        element={
+          <RequireRole allow="wholesaler">
+            <WholesalerDashboard />
+          </RequireRole>
+        }
+      />
+
       <Route
         path="/retailer"
         element={
@@ -75,8 +68,9 @@ export default function App() {
           </RequireRole>
         }
       />
+
       <Route path="/" element={<Navigate to="/shop" replace />} />
-<Route path="*" element={<Navigate to="/shop" replace />} />
+      <Route path="*" element={<Navigate to="/shop" replace />} />
     </Routes>
   );
 }
