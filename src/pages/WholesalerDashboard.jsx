@@ -1,8 +1,22 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import {
+  doc,
+  getDoc,
+  addDoc,
+  collection,
+  query,
+  where,
+  orderBy,
+  getDocs,
+  serverTimestamp,
+} from 'firebase/firestore';
 import { auth, db } from '../lib/firebase.js';
+
+const inputClass =
+  'block w-full rounded-lg border border-line bg-paper px-3 py-2.5 text-base text-ink ' +
+  'focus:outline-none focus:border-brand focus:bg-white focus:ring-4 focus:ring-brand-soft';
 
 export default function WholesalerDashboard() {
   const navigate = useNavigate();
@@ -11,8 +25,21 @@ export default function WholesalerDashboard() {
   const [shop, setShop] = useState(null);
   const [error, setError] = useState('');
 
+  const [products, setProducts] = useState([]);
+  const [productsLoading, setProductsLoading] = useState(true);
+
+  // Add-product form state
+  const [showForm, setShowForm] = useState(false);
+  const [productName, setProductName] = useState('');
+  const [price, setPrice] = useState('');
+  const [unit, setUnit] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState('');
+
+  // Load shop profile
   useEffect(() => {
-    async function load() {
+    async function loadShop() {
       try {
         const uid = auth.currentUser?.uid;
         if (!uid) {
@@ -20,11 +47,8 @@ export default function WholesalerDashboard() {
           return;
         }
         const snap = await getDoc(doc(db, 'wholesalers', uid));
-        if (!snap.exists()) {
-          setError('No shop profile found for this account.');
-        } else {
-          setShop(snap.data());
-        }
+        if (!snap.exists()) setError('No shop profile found for this account.');
+        else setShop(snap.data());
       } catch (err) {
         console.error(err);
         setError('Could not load your shop.');
@@ -32,19 +56,87 @@ export default function WholesalerDashboard() {
         setLoading(false);
       }
     }
-    load();
+    loadShop();
   }, [navigate]);
+
+  // Load this wholesaler's products (once we know they're approved)
+  useEffect(() => {
+    async function loadProducts() {
+      if (!shop || !shop.approved) {
+        setProductsLoading(false);
+        return;
+      }
+      try {
+        const uid = auth.currentUser.uid;
+        const q = query(
+          collection(db, 'products'),
+          where('wholesalerId', '==', uid),
+          orderBy('createdAt', 'desc')
+        );
+        const snap = await getDocs(q);
+        setProducts(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setProductsLoading(false);
+      }
+    }
+    loadProducts();
+  }, [shop]);
 
   async function handleSignOut() {
     await signOut(auth);
     navigate('/login', { replace: true });
   }
 
+  async function handleAddProduct(e) {
+    e.preventDefault();
+    setFormError('');
+
+    const trimmedName = productName.trim();
+    const trimmedUnit = unit.trim();
+    const priceNum = Number(price);
+
+    if (!trimmedName) return setFormError('Product name is required.');
+    if (!Number.isFinite(priceNum) || priceNum <= 0 || !Number.isInteger(priceNum))
+      return setFormError('Price must be a whole number greater than 0.');
+    if (!trimmedUnit) return setFormError('Unit is required (e.g. Bale, Piece, Carton).');
+    if (imageUrl && !/^https?:\/\//i.test(imageUrl.trim()))
+      return setFormError('Image URL should start with http:// or https://');
+
+    setSaving(true);
+    try {
+      const uid = auth.currentUser.uid;
+      const newDoc = {
+        wholesalerId: uid,
+        wholesalerShopName: shop.shopName,
+        wholesalerWhatsapp: shop.whatsappNumber,
+        productName: trimmedName,
+        price: priceNum,
+        unit: trimmedUnit,
+        imageUrl: imageUrl.trim() || '',
+        createdAt: serverTimestamp(),
+      };
+      const ref = await addDoc(collection(db, 'products'), newDoc);
+
+      setProducts((prev) => [{ id: ref.id, ...newDoc, createdAt: new Date() }, ...prev]);
+
+      setProductName('');
+      setPrice('');
+      setUnit('');
+      setImageUrl('');
+      setShowForm(false);
+    } catch (err) {
+      console.error(err);
+      setFormError('Could not save product. Try again.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-muted">
-        Loading…
-      </div>
+      <div className="min-h-screen flex items-center justify-center text-muted">Loading…</div>
     );
   }
 
@@ -64,7 +156,6 @@ export default function WholesalerDashboard() {
     );
   }
 
-  // Not yet approved — waiting screen.
   if (!shop.approved) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
@@ -90,18 +181,150 @@ export default function WholesalerDashboard() {
     );
   }
 
-  // Approved — placeholder for now.
+  // Approved dashboard
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
-      <div className="w-full max-w-sm rounded-2xl border border-line bg-white p-7 text-center">
-        <h1 className="text-xl font-bold mb-2">{shop.shopName}</h1>
-        <p className="text-sm text-muted mb-5">Your shop is approved! Products coming next.</p>
-        <button
-          onClick={handleSignOut}
-          className="w-full rounded-lg border border-line px-4 py-2.5 text-sm font-semibold text-brand"
-        >
-          Sign out
-        </button>
+    <div className="min-h-screen bg-paper">
+      <div className="mx-auto max-w-2xl px-4 py-6">
+        <div className="flex items-start justify-between mb-5">
+          <div>
+            <h1 className="text-2xl font-bold">{shop.shopName}</h1>
+            <p className="text-sm text-muted">{shop.ownerName}</p>
+          </div>
+          <button
+            onClick={handleSignOut}
+            className="rounded-lg border border-line px-3 py-2 text-sm font-semibold text-brand bg-white"
+          >
+            Sign out
+          </button>
+        </div>
+
+        <div className="rounded-2xl border border-line bg-white p-5 mb-5">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-bold">Your products ({products.length})</h2>
+            {!showForm && (
+              <button
+                onClick={() => setShowForm(true)}
+                className="rounded-lg bg-accent px-3 py-2 text-sm font-semibold text-white"
+              >
+                + Add product
+              </button>
+            )}
+          </div>
+
+          {showForm && (
+            <form onSubmit={handleAddProduct} className="mb-5 rounded-xl bg-paper p-4">
+              <div className="mb-3">
+                <label className="block mb-1.5 text-xs font-semibold text-muted">
+                  Product name
+                </label>
+                <input
+                  className={inputClass}
+                  value={productName}
+                  onChange={(e) => setProductName(e.target.value)}
+                  placeholder="e.g. Bale of T-shirts"
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3 mb-3">
+                <div>
+                  <label className="block mb-1.5 text-xs font-semibold text-muted">
+                    Price (UGX)
+                  </label>
+                  <input
+                    className={inputClass}
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={price}
+                    onChange={(e) => setPrice(e.target.value)}
+                    placeholder="150000"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block mb-1.5 text-xs font-semibold text-muted">Unit</label>
+                  <input
+                    className={inputClass}
+                    value={unit}
+                    onChange={(e) => setUnit(e.target.value)}
+                    placeholder="Bale / Piece / Carton"
+                    required
+                  />
+                </div>
+              </div>
+              <div className="mb-3">
+                <label className="block mb-1.5 text-xs font-semibold text-muted">
+                  Image URL (optional)
+                </label>
+                <input
+                  className={inputClass}
+                  value={imageUrl}
+                  onChange={(e) => setImageUrl(e.target.value)}
+                  placeholder="https://..."
+                />
+              </div>
+              {formError && (
+                <p className="mb-3 rounded-lg bg-danger/10 px-3 py-2 text-[13.5px] text-danger">
+                  {formError}
+                </p>
+              )}
+              <div className="flex gap-2">
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="flex-1 rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+                >
+                  {saving ? 'Saving…' : 'Save product'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowForm(false);
+                    setFormError('');
+                  }}
+                  className="rounded-lg border border-line bg-white px-4 py-2.5 text-sm font-semibold text-muted"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          )}
+
+          {productsLoading ? (
+            <p className="text-sm text-muted">Loading products…</p>
+          ) : products.length === 0 ? (
+            <p className="text-sm text-muted">
+              No products yet. Tap “Add product” to create your first one.
+            </p>
+          ) : (
+            <ul className="divide-y divide-line">
+              {products.map((p) => (
+                <li key={p.id} className="flex items-center gap-3 py-3">
+                  {p.imageUrl ? (
+                    <img
+                      src={p.imageUrl}
+                      alt=""
+                      className="h-12 w-12 rounded-lg object-cover bg-paper"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                      }}
+                    />
+                  ) : (
+                    <div className="h-12 w-12 rounded-lg bg-paper flex items-center justify-center text-muted text-xs">
+                      no img
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold truncate">{p.productName}</p>
+                    <p className="text-sm text-muted">
+                      UGX {p.price.toLocaleString()} / {p.unit}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
     </div>
   );
