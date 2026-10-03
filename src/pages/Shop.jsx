@@ -1,21 +1,44 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { collection, getDocs, query, where } from 'firebase/firestore';
-import { db } from '../lib/firebase.js';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth, db } from '../lib/firebase.js';
 
 function formatPrice(n) {
   return Number(n).toLocaleString('en-UG');
 }
 
+// Builds a wa.me link. Number must be digits only, no + or spaces.
+function buildWhatsAppLink({ number, shopName, productName, price, unit, retailerName }) {
+  const lines = [
+    `Hello ${shopName},`,
+    '',
+    `I'd like to order:`,
+    `• ${productName} — UGX ${Number(price).toLocaleString('en-UG')} / ${unit}`,
+    '',
+    `My name is ${retailerName}. Is it available?`,
+  ];
+  const text = encodeURIComponent(lines.join('\n'));
+  return `https://wa.me/${number}?text=${text}`;
+}
+
 export default function Shop() {
+  const navigate = useNavigate();
+
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState([]);
   const [error, setError] = useState('');
+  const [user, setUser] = useState(null);
+
+  // Track signed-in state so we know whether to open WhatsApp or send to login.
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (u) => setUser(u));
+    return unsub;
+  }, []);
 
   useEffect(() => {
     async function load() {
       try {
-        // Load all approved wholesalers first, so we know whose products to show.
         const wsSnap = await getDocs(
           query(collection(db, 'wholesalers'), where('approved', '==', true))
         );
@@ -26,7 +49,6 @@ export default function Shop() {
           return;
         }
 
-        // Firestore 'in' queries cap at 10 — chunk if needed.
         const chunks = [];
         for (let i = 0; i < approvedIds.length; i += 10) {
           chunks.push(approvedIds.slice(i, i + 10));
@@ -35,15 +57,11 @@ export default function Shop() {
         const all = [];
         for (const chunk of chunks) {
           const pSnap = await getDocs(
-            query(
-              collection(db, 'products'),
-              where('wholesalerId', 'in', chunk)
-            )
+            query(collection(db, 'products'), where('wholesalerId', 'in', chunk))
           );
           pSnap.forEach((d) => all.push({ id: d.id, ...d.data() }));
         }
 
-        // Sort newest first, client-side (no index needed).
         all.sort((a, b) => {
           const at = a.createdAt?.seconds ?? 0;
           const bt = b.createdAt?.seconds ?? 0;
@@ -61,6 +79,28 @@ export default function Shop() {
     load();
   }, []);
 
+  function handleOrder(product) {
+    // Not signed in? Send them to login, then bounce back to /shop.
+    if (!user) {
+      navigate('/login?next=/shop');
+      return;
+    }
+
+    const retailerName =
+      user.displayName || user.email?.split('@')[0] || 'a buyer';
+
+    const link = buildWhatsAppLink({
+      number: product.wholesalerWhatsapp,
+      shopName: product.wholesalerShopName,
+      productName: product.productName,
+      price: product.price,
+      unit: product.unit,
+      retailerName,
+    });
+
+    window.open(link, '_blank', 'noopener,noreferrer');
+  }
+
   return (
     <div className="min-h-screen bg-paper">
       <header className="border-b border-line bg-white">
@@ -69,18 +109,26 @@ export default function Shop() {
             Wholesale Market
           </Link>
           <div className="flex gap-2">
-            <Link
-              to="/login"
-              className="rounded-lg border border-line px-3 py-2 text-sm font-semibold text-brand"
-            >
-              Sign in
-            </Link>
-            <Link
-              to="/register"
-              className="rounded-lg bg-accent px-3 py-2 text-sm font-semibold text-white"
-            >
-              Register
-            </Link>
+            {user ? (
+              <span className="text-sm text-muted self-center">
+                {user.email}
+              </span>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  className="rounded-lg border border-line px-3 py-2 text-sm font-semibold text-brand"
+                >
+                  Sign in
+                </Link>
+                <Link
+                  to="/register"
+                  className="rounded-lg bg-accent px-3 py-2 text-sm font-semibold text-white"
+                >
+                  Register
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -132,9 +180,8 @@ export default function Shop() {
                     <span className="text-sm font-normal text-muted">/ {p.unit}</span>
                   </p>
                   <button
-                    disabled
-                    className="mt-3 w-full rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-white opacity-90"
-                    title="Coming next step"
+                    onClick={() => handleOrder(p)}
+                    className="mt-3 w-full rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-white"
                   >
                     Order on WhatsApp
                   </button>
