@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase.js';
 
 function friendlyError(code) {
@@ -43,6 +43,16 @@ export default function Login() {
     try {
       const result = await signInWithEmailAndPassword(auth, email, password);
 
+      // Best-effort: record activity for the admin's "inactive retailers" view.
+      // Don't block sign-in if this fails.
+      try {
+        await updateDoc(doc(db, 'users', result.user.uid), {
+          lastActiveAt: serverTimestamp(),
+        });
+      } catch (err) {
+        console.error('lastActiveAt update failed', err);
+      }
+
       const snap = await getDoc(doc(db, 'users', result.user.uid));
       if (!snap.exists()) {
         setError('No role assigned to this account.');
@@ -51,8 +61,6 @@ export default function Login() {
 
       const role = snap.data().role;
 
-      // If the user came from a specific page (e.g. /shop after tapping Order),
-      // send them there. Otherwise, use their role's default landing page.
       if (next) {
         navigate(next, { replace: true });
       } else if (role === 'platform') {
