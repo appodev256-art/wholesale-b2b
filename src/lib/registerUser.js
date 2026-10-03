@@ -21,15 +21,16 @@ export async function registerUser({ role, email, password, shopName, ownerName,
   });
 
   if (role === 'wholesaler') {
-    await setDoc(doc(db, 'wholesalers', uid), {
-      shopName,
-      ownerName,
-      whatsappNumber: cleanPhone(whatsappNumber),
-      email,
-      approved: false,
-      createdAt: serverTimestamp(),
-    });
-  }
+  await setDoc(doc(db, 'wholesalers', uid), {
+    shopName,
+    ownerName,
+    whatsappNumber: cleanPhone(whatsappNumber),
+    email,
+    approved: false,
+    rejected: false,
+    createdAt: serverTimestamp(),
+  });
+}
 
   return cred.user;
 }
