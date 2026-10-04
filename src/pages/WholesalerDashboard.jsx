@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { signOut } from 'firebase/auth';
 import {
   doc,
   getDoc,
@@ -12,6 +11,8 @@ import {
   serverTimestamp,
 } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase.js';
+import Header from '../components/Header.jsx';
+import Footer from '../components/Footer.jsx';
 
 const inputClass =
   'block w-full rounded-lg border border-line bg-paper px-3 py-2.5 text-base text-ink ' +
@@ -82,11 +83,6 @@ export default function WholesalerDashboard() {
     loadProducts();
   }, [shop]);
 
-  async function handleSignOut() {
-    await signOut(auth);
-    navigate('/login', { replace: true });
-  }
-
   async function handleAddProduct(e) {
     e.preventDefault();
     setFormError('');
@@ -132,104 +128,102 @@ export default function WholesalerDashboard() {
     }
   }
 
+  // ----- States -----
+
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-muted">Loading…</div>
+      <div className="min-h-screen flex flex-col bg-paper">
+        <Header />
+        <main className="flex-1 flex items-center justify-center text-muted">
+          Loading…
+        </main>
+        <Footer />
+      </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4">
-        <div className="w-full max-w-sm rounded-2xl border border-line bg-white p-7 text-center">
-          <p className="text-danger mb-4">{error}</p>
-          <button
-            onClick={handleSignOut}
-            className="rounded-lg border border-line px-4 py-2 text-sm font-semibold text-brand"
-          >
-            Sign out
-          </button>
-        </div>
+      <div className="min-h-screen flex flex-col bg-paper">
+        <Header />
+        <main className="flex-1 flex items-center justify-center px-4">
+          <div className="w-full max-w-sm rounded-2xl border border-line bg-white p-7 text-center">
+            <p className="text-danger">{error}</p>
+          </div>
+        </main>
+        <Footer />
       </div>
     );
   }
 
-  // Rejected — a clear, final screen.
+  // Rejected
   if (shop.rejected) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4">
-        <div className="w-full max-w-sm rounded-2xl border border-line bg-white p-7 text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-danger/10 text-danger text-2xl">
-            ✕
+      <div className="min-h-screen flex flex-col bg-paper">
+        <Header />
+        <main className="flex-1 flex items-center justify-center px-4 py-10">
+          <div className="w-full max-w-sm rounded-2xl border border-line bg-white p-7 text-center">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-danger/10 text-danger text-2xl">
+              ✕
+            </div>
+            <h1 className="text-xl font-bold mb-2">Your application was rejected</h1>
+            <p className="text-sm text-muted">
+              We're sorry, {shop.ownerName}. Your shop{' '}
+              <span className="font-semibold text-ink">{shop.shopName}</span> wasn't
+              approved. If you believe this is a mistake, please contact the
+              platform admin.
+            </p>
           </div>
-          <h1 className="text-xl font-bold mb-2">Your application was rejected</h1>
-          <p className="text-sm text-muted mb-5">
-            We're sorry, {shop.ownerName}. Your shop{' '}
-            <span className="font-semibold text-ink">{shop.shopName}</span> wasn't
-            approved. If you believe this is a mistake, please contact the
-            platform admin.
-          </p>
-          <button
-            onClick={handleSignOut}
-            className="w-full rounded-lg border border-line px-4 py-2.5 text-sm font-semibold text-brand"
-          >
-            Sign out
-          </button>
-        </div>
+        </main>
+        <Footer />
       </div>
     );
   }
 
-  // Pending approval.
+  // Pending
   if (!shop.approved) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4">
-        <div className="w-full max-w-sm rounded-2xl border border-line bg-white p-7 text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-accent-soft text-accent text-2xl">
-            ⏳
+      <div className="min-h-screen flex flex-col bg-paper">
+        <Header />
+        <main className="flex-1 flex items-center justify-center px-4 py-10">
+          <div className="w-full max-w-sm rounded-2xl border border-line bg-white p-7 text-center">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-accent-soft text-accent text-2xl">
+              ⏳
+            </div>
+            <h1 className="text-xl font-bold mb-2">Your shop is under review</h1>
+            <p className="text-sm text-muted">
+              Thanks, {shop.ownerName}. We've received your registration for{' '}
+              <span className="font-semibold text-ink">{shop.shopName}</span>. The
+              platform admin will review it shortly. You'll be able to add products
+              once you're approved.
+            </p>
           </div>
-          <h1 className="text-xl font-bold mb-2">Your shop is under review</h1>
-          <p className="text-sm text-muted mb-5">
-            Thanks, {shop.ownerName}. We've received your registration for{' '}
-            <span className="font-semibold text-ink">{shop.shopName}</span>. The
-            platform admin will review it shortly. You'll be able to add products
-            once you're approved.
-          </p>
-          <button
-            onClick={handleSignOut}
-            className="w-full rounded-lg border border-line px-4 py-2.5 text-sm font-semibold text-brand"
-          >
-            Sign out
-          </button>
-        </div>
+        </main>
+        <Footer />
       </div>
     );
   }
 
-  // Approved dashboard
+  // Approved — full dashboard
   return (
-    <div className="min-h-screen bg-paper">
-      <div className="mx-auto max-w-2xl px-4 py-6">
-        <div className="flex items-start justify-between mb-5">
-          <div>
-            <h1 className="text-2xl font-bold">{shop.shopName}</h1>
-            <p className="text-sm text-muted">{shop.ownerName}</p>
-          </div>
-          <button
-            onClick={handleSignOut}
-            className="rounded-lg border border-line px-3 py-2 text-sm font-semibold text-brand bg-white"
-          >
-            Sign out
-          </button>
+    <div className="min-h-screen flex flex-col bg-paper">
+      <Header />
+
+      <main className="flex-1 mx-auto w-full max-w-3xl px-4 py-6">
+        <div className="mb-5">
+          <h1 className="text-2xl font-bold">{shop.shopName}</h1>
+          <p className="text-sm text-muted">
+            {shop.ownerName} · WhatsApp: {shop.whatsappNumber}
+          </p>
         </div>
 
-        <div className="rounded-2xl border border-line bg-white p-5 mb-5">
+        <div className="rounded-2xl border border-line bg-white p-5">
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-bold">Your products ({products.length})</h2>
             {!showForm && (
               <button
                 onClick={() => setShowForm(true)}
-                className="rounded-lg bg-accent px-3 py-2 text-sm font-semibold text-white"
+                className="rounded-lg bg-accent px-3 py-2 text-sm font-semibold text-white hover:opacity-90"
               >
                 + Add product
               </button>
@@ -297,7 +291,7 @@ export default function WholesalerDashboard() {
                 <button
                   type="submit"
                   disabled={saving}
-                  className="flex-1 rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+                  className="flex-1 rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60"
                 >
                   {saving ? 'Saving…' : 'Save product'}
                 </button>
@@ -307,7 +301,7 @@ export default function WholesalerDashboard() {
                     setShowForm(false);
                     setFormError('');
                   }}
-                  className="rounded-lg border border-line bg-white px-4 py-2.5 text-sm font-semibold text-muted"
+                  className="rounded-lg border border-line bg-white px-4 py-2.5 text-sm font-semibold text-muted hover:bg-paper"
                 >
                   Cancel
                 </button>
@@ -350,7 +344,9 @@ export default function WholesalerDashboard() {
             </ul>
           )}
         </div>
-      </div>
+      </main>
+
+      <Footer />
     </div>
   );
 }
