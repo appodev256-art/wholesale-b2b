@@ -1,6 +1,4 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { signOut } from 'firebase/auth';
 import {
   collection,
   doc,
@@ -9,7 +7,9 @@ import {
   updateDoc,
   where,
 } from 'firebase/firestore';
-import { auth, db } from '../lib/firebase.js';
+import { db } from '../lib/firebase.js';
+import Header from '../components/Header.jsx';
+import Footer from '../components/Footer.jsx';
 
 function formatDate(ts) {
   if (!ts) return '—';
@@ -37,14 +37,14 @@ function ShopCard({ shop, onApprove, onReject, busy, showActions }) {
           <button
             onClick={() => onApprove(shop.id)}
             disabled={busy}
-            className="flex-1 rounded-lg bg-brand px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
+            className="flex-1 rounded-lg bg-brand px-3 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60"
           >
             Approve
           </button>
           <button
             onClick={() => onReject(shop.id)}
             disabled={busy}
-            className="flex-1 rounded-lg border border-line bg-white px-3 py-2 text-sm font-semibold text-danger disabled:opacity-60"
+            className="flex-1 rounded-lg border border-line bg-white px-3 py-2 text-sm font-semibold text-danger hover:bg-paper disabled:opacity-60"
           >
             Reject
           </button>
@@ -55,8 +55,6 @@ function ShopCard({ shop, onApprove, onReject, busy, showActions }) {
 }
 
 export default function PlatformDashboard() {
-  const navigate = useNavigate();
-
   const [loading, setLoading] = useState(true);
   const [pending, setPending] = useState([]);
   const [approved, setApproved] = useState([]);
@@ -67,8 +65,6 @@ export default function PlatformDashboard() {
 
   async function loadAll() {
     try {
-      // Single-field queries only — no composite index needed.
-      // Client-side filtering for the approved/rejected split.
       const [wholesalersSnap, retailersSnap] = await Promise.all([
         getDocs(collection(db, 'wholesalers')),
         getDocs(query(collection(db, 'users'), where('role', '==', 'retailer'))),
@@ -127,32 +123,28 @@ export default function PlatformDashboard() {
     }
   }
 
-  async function handleSignOut() {
-    await signOut(auth);
-    navigate('/login', { replace: true });
-  }
-
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-muted">Loading…</div>
+      <div className="min-h-screen flex flex-col bg-paper">
+        <Header />
+        <main className="flex-1 flex items-center justify-center text-muted">
+          Loading…
+        </main>
+        <Footer />
+      </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-paper">
-      <header className="border-b border-line bg-white">
-        <div className="mx-auto max-w-3xl px-4 py-4 flex items-center justify-between">
-          <h1 className="font-bold text-lg text-ink">Platform Admin</h1>
-          <button
-            onClick={handleSignOut}
-            className="rounded-lg border border-line px-3 py-2 text-sm font-semibold text-brand"
-          >
-            Sign out
-          </button>
-        </div>
-      </header>
+    <div className="min-h-screen flex flex-col bg-paper">
+      <Header />
 
-      <div className="mx-auto max-w-3xl px-4 py-6 space-y-6">
+      <main className="flex-1 mx-auto w-full max-w-3xl px-4 py-6 space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold mb-1">Admin</h1>
+          <p className="text-sm text-muted">Manage wholesalers and retailers on the platform.</p>
+        </div>
+
         {error && (
           <p className="rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">{error}</p>
         )}
@@ -204,9 +196,7 @@ export default function PlatformDashboard() {
           <h2 className="text-lg font-bold mb-1">
             Rejected wholesalers ({rejected.length})
           </h2>
-          <p className="text-sm text-muted mb-3">
-            Applications that were rejected.
-          </p>
+          <p className="text-sm text-muted mb-3">Applications that were rejected.</p>
           {rejected.length === 0 ? (
             <div className="rounded-xl border border-line bg-white p-4 text-sm text-muted">
               None yet.
@@ -240,7 +230,9 @@ export default function PlatformDashboard() {
             </div>
           )}
         </section>
-      </div>
+      </main>
+
+      <Footer />
     </div>
   );
 }
