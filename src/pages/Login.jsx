@@ -3,6 +3,8 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase.js';
+import Header from '../components/Header.jsx';
+import Footer from '../components/Footer.jsx';
 
 function friendlyError(code) {
   switch (code) {
@@ -43,8 +45,6 @@ export default function Login() {
     try {
       const result = await signInWithEmailAndPassword(auth, email, password);
 
-      // Best-effort: record activity for the admin's "inactive retailers" view.
-      // Don't block sign-in if this fails.
       try {
         await updateDoc(doc(db, 'users', result.user.uid), {
           lastActiveAt: serverTimestamp(),
@@ -80,51 +80,57 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-6">
-      <div className="w-full max-w-sm rounded-2xl border border-line bg-white p-7 shadow-lg shadow-ink/5">
-        <h1 className="text-center text-2xl font-bold mb-1">Welcome back</h1>
-        <p className="text-center text-sm text-muted mb-5">Sign in to your wholesale account</p>
-        <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label className="block mb-1.5 text-xs font-semibold text-muted">Email</label>
-            <input
-              type="email"
-              className={inputClass}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </div>
-          <div className="mb-4">
-            <label className="block mb-1.5 text-xs font-semibold text-muted">Password</label>
-            <input
-              type="password"
-              className={inputClass}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </div>
-          {error && (
-            <p className="mb-3.5 rounded-lg bg-danger/10 px-3 py-2 text-[13.5px] text-danger">
-              {error}
-            </p>
-          )}
-          <button
-            type="submit"
-            disabled={busy}
-            className="block w-full rounded-lg bg-accent px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
-          >
-            {busy ? 'Signing in…' : 'Sign in'}
-          </button>
-        </form>
-        <p className="text-center text-sm text-muted mt-5">
-          New here?{' '}
-          <Link to="/register" className="text-brand font-semibold">
-            Create an account
-          </Link>
-        </p>
-      </div>
+    <div className="min-h-screen flex flex-col bg-paper">
+      <Header minimal />
+
+      <main className="flex-1 flex items-center justify-center px-4 py-10">
+        <div className="w-full max-w-sm rounded-2xl border border-line bg-white p-7 shadow-lg shadow-ink/5">
+          <h1 className="text-center text-2xl font-bold mb-1">Welcome back</h1>
+          <p className="text-center text-sm text-muted mb-5">Sign in to your wholesale account</p>
+          <form onSubmit={handleSubmit}>
+            <div className="mb-4">
+              <label className="block mb-1.5 text-xs font-semibold text-muted">Email</label>
+              <input
+                type="email"
+                className={inputClass}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+            <div className="mb-4">
+              <label className="block mb-1.5 text-xs font-semibold text-muted">Password</label>
+              <input
+                type="password"
+                className={inputClass}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+            {error && (
+              <p className="mb-3.5 rounded-lg bg-danger/10 px-3 py-2 text-[13.5px] text-danger">
+                {error}
+              </p>
+            )}
+            <button
+              type="submit"
+              disabled={busy}
+              className="block w-full rounded-lg bg-accent px-4 py-3 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60"
+            >
+              {busy ? 'Signing in…' : 'Sign in'}
+            </button>
+          </form>
+          <p className="text-center text-sm text-muted mt-5">
+            New here?{' '}
+            <Link to="/register" className="text-brand font-semibold">
+              Create an account
+            </Link>
+          </p>
+        </div>
+      </main>
+
+      <Footer />
     </div>
   );
 }
