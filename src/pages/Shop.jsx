@@ -3,12 +3,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '../lib/firebase.js';
+import Header from '../components/Header.jsx';
 
 function formatPrice(n) {
   return Number(n).toLocaleString('en-UG');
 }
 
-// Builds a wa.me link. Number must be digits only, no + or spaces.
 function buildWhatsAppLink({ number, shopName, productName, price, unit, retailerName }) {
   const lines = [
     `Hello ${shopName},`,
@@ -29,8 +29,8 @@ export default function Shop() {
   const [products, setProducts] = useState([]);
   const [error, setError] = useState('');
   const [user, setUser] = useState(null);
+  const [search, setSearch] = useState('');
 
-  // Track signed-in state so we know whether to open WhatsApp or send to login.
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => setUser(u));
     return unsub;
@@ -80,7 +80,6 @@ export default function Shop() {
   }, []);
 
   function handleOrder(product) {
-    // Not signed in? Send them to login, then bounce back to /shop.
     if (!user) {
       navigate('/login?next=/shop');
       return;
@@ -101,39 +100,15 @@ export default function Shop() {
     window.open(link, '_blank', 'noopener,noreferrer');
   }
 
+  const visible = products.filter((p) =>
+    p.productName.toLowerCase().includes(search.trim().toLowerCase())
+  );
+
   return (
     <div className="min-h-screen bg-paper">
-      <header className="border-b border-line bg-white">
-        <div className="mx-auto max-w-3xl px-4 py-4 flex items-center justify-between">
-          <Link to="/shop" className="font-bold text-lg text-ink">
-            Wholesale Market
-          </Link>
-          <div className="flex gap-2">
-            {user ? (
-              <span className="text-sm text-muted self-center">
-                {user.email}
-              </span>
-            ) : (
-              <>
-                <Link
-                  to="/login"
-                  className="rounded-lg border border-line px-3 py-2 text-sm font-semibold text-brand"
-                >
-                  Sign in
-                </Link>
-                <Link
-                  to="/register"
-                  className="rounded-lg bg-accent px-3 py-2 text-sm font-semibold text-white"
-                >
-                  Register
-                </Link>
-              </>
-            )}
-          </div>
-        </div>
-      </header>
+      <Header showSearch searchValue={search} onSearch={setSearch} />
 
-      <div className="mx-auto max-w-3xl px-4 py-6">
+      <div className="mx-auto max-w-5xl px-4 py-6">
         <h1 className="text-2xl font-bold mb-1">Browse products</h1>
         <p className="text-sm text-muted mb-5">
           Order directly from wholesalers on WhatsApp.
@@ -151,9 +126,15 @@ export default function Shop() {
           </div>
         )}
 
-        {!loading && !error && products.length > 0 && (
-          <div className="grid gap-4 sm:grid-cols-2">
-            {products.map((p) => (
+        {!loading && !error && products.length > 0 && visible.length === 0 && (
+          <div className="rounded-2xl border border-line bg-white p-6 text-center">
+            <p className="text-muted">No products match “{search}”.</p>
+          </div>
+        )}
+
+        {!loading && !error && visible.length > 0 && (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {visible.map((p) => (
               <div
                 key={p.id}
                 className="overflow-hidden rounded-2xl border border-line bg-white"
@@ -181,7 +162,7 @@ export default function Shop() {
                   </p>
                   <button
                     onClick={() => handleOrder(p)}
-                    className="mt-3 w-full rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-white"
+                    className="mt-3 w-full rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-white hover:opacity-90"
                   >
                     Order on WhatsApp
                   </button>
