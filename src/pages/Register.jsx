@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { registerUser } from '../lib/registerUser.js';
+import Header from '../components/Header.jsx';
+import Footer from '../components/Footer.jsx';
 
 function friendlyError(code) {
   switch (code) {
@@ -71,123 +73,129 @@ export default function Register() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-6">
-      <div className="w-full max-w-md rounded-2xl border border-line bg-white p-7 shadow-lg shadow-ink/5">
-        <h1 className="text-center text-2xl font-bold mb-1">Create an account</h1>
-        <p className="text-center text-sm text-muted mb-5">Choose how you'll use the platform</p>
+    <div className="min-h-screen flex flex-col bg-paper">
+      <Header minimal />
 
-        <div className="grid grid-cols-2 gap-2 mb-5">
-          <button
-            type="button"
-            onClick={() => setRole('retailer')}
-            className={
-              'rounded-lg border px-3 py-2.5 text-sm font-semibold ' +
-              (role === 'retailer'
-                ? 'border-brand bg-brand text-white'
-                : 'border-line bg-white text-muted')
-            }
-          >
-            I'm a buyer
-          </button>
-          <button
-            type="button"
-            onClick={() => setRole('wholesaler')}
-            className={
-              'rounded-lg border px-3 py-2.5 text-sm font-semibold ' +
-              (role === 'wholesaler'
-                ? 'border-brand bg-brand text-white'
-                : 'border-line bg-white text-muted')
-            }
-          >
-            I'm a wholesaler
-          </button>
+      <main className="flex-1 flex items-center justify-center px-4 py-10">
+        <div className="w-full max-w-md rounded-2xl border border-line bg-white p-7 shadow-lg shadow-ink/5">
+          <h1 className="text-center text-2xl font-bold mb-1">Create an account</h1>
+          <p className="text-center text-sm text-muted mb-5">Choose how you'll use the platform</p>
+
+          <div className="grid grid-cols-2 gap-2 mb-5">
+            <button
+              type="button"
+              onClick={() => setRole('retailer')}
+              className={
+                'rounded-lg border px-3 py-2.5 text-sm font-semibold ' +
+                (role === 'retailer'
+                  ? 'border-brand bg-brand text-white'
+                  : 'border-line bg-white text-muted')
+              }
+            >
+              I'm a buyer
+            </button>
+            <button
+              type="button"
+              onClick={() => setRole('wholesaler')}
+              className={
+                'rounded-lg border px-3 py-2.5 text-sm font-semibold ' +
+                (role === 'wholesaler'
+                  ? 'border-brand bg-brand text-white'
+                  : 'border-line bg-white text-muted')
+              }
+            >
+              I'm a wholesaler
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit}>
+            {role === 'wholesaler' && (
+              <>
+                <div className="mb-4">
+                  <label className="block mb-1.5 text-xs font-semibold text-muted">Shop name</label>
+                  <input
+                    className={inputClass}
+                    value={shopName}
+                    onChange={(e) => setShopName(e.target.value)}
+                    placeholder="e.g. Mukwano Wholesales"
+                    required
+                  />
+                </div>
+                <div className="mb-4">
+                  <label className="block mb-1.5 text-xs font-semibold text-muted">Owner name</label>
+                  <input
+                    className={inputClass}
+                    value={ownerName}
+                    onChange={(e) => setOwnerName(e.target.value)}
+                    placeholder="e.g. Kato"
+                    required
+                  />
+                </div>
+                <div className="mb-4">
+                  <label className="block mb-1.5 text-xs font-semibold text-muted">
+                    WhatsApp number
+                  </label>
+                  <input
+                    className={inputClass}
+                    value={whatsappNumber}
+                    onChange={(e) => setWhatsappNumber(e.target.value)}
+                    placeholder="256772123456"
+                    required
+                  />
+                  <p className="text-xs text-muted mt-1">
+                    Include country code. Digits only — no +, no spaces.
+                  </p>
+                </div>
+              </>
+            )}
+
+            <div className="mb-4">
+              <label className="block mb-1.5 text-xs font-semibold text-muted">Email</label>
+              <input
+                type="email"
+                className={inputClass}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+            <div className="mb-4">
+              <label className="block mb-1.5 text-xs font-semibold text-muted">Password</label>
+              <input
+                type="password"
+                className={inputClass}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+              <p className="text-xs text-muted mt-1">At least 6 characters.</p>
+            </div>
+
+            {error && (
+              <p className="mb-3.5 rounded-lg bg-danger/10 px-3 py-2 text-[13.5px] text-danger">
+                {error}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              disabled={busy}
+              className="block w-full rounded-lg bg-accent px-4 py-3 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60"
+            >
+              {busy ? 'Creating account…' : 'Create account'}
+            </button>
+          </form>
+
+          <p className="text-center text-sm text-muted mt-5">
+            Already have an account?{' '}
+            <Link to="/login" className="text-brand font-semibold">
+              Sign in
+            </Link>
+          </p>
         </div>
+      </main>
 
-        <form onSubmit={handleSubmit}>
-          {role === 'wholesaler' && (
-            <>
-              <div className="mb-4">
-                <label className="block mb-1.5 text-xs font-semibold text-muted">Shop name</label>
-                <input
-                  className={inputClass}
-                  value={shopName}
-                  onChange={(e) => setShopName(e.target.value)}
-                  placeholder="e.g. Mukwano Wholesales"
-                  required
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block mb-1.5 text-xs font-semibold text-muted">Owner name</label>
-                <input
-                  className={inputClass}
-                  value={ownerName}
-                  onChange={(e) => setOwnerName(e.target.value)}
-                  placeholder="e.g. Kato"
-                  required
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block mb-1.5 text-xs font-semibold text-muted">
-                  WhatsApp number
-                </label>
-                <input
-                  className={inputClass}
-                  value={whatsappNumber}
-                  onChange={(e) => setWhatsappNumber(e.target.value)}
-                  placeholder="256772123456"
-                  required
-                />
-                <p className="text-xs text-muted mt-1">
-                  Include country code. Digits only — no +, no spaces.
-                </p>
-              </div>
-            </>
-          )}
-
-          <div className="mb-4">
-            <label className="block mb-1.5 text-xs font-semibold text-muted">Email</label>
-            <input
-              type="email"
-              className={inputClass}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </div>
-          <div className="mb-4">
-            <label className="block mb-1.5 text-xs font-semibold text-muted">Password</label>
-            <input
-              type="password"
-              className={inputClass}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-            <p className="text-xs text-muted mt-1">At least 6 characters.</p>
-          </div>
-
-          {error && (
-            <p className="mb-3.5 rounded-lg bg-danger/10 px-3 py-2 text-[13.5px] text-danger">
-              {error}
-            </p>
-          )}
-
-          <button
-            type="submit"
-            disabled={busy}
-            className="block w-full rounded-lg bg-accent px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
-          >
-            {busy ? 'Creating account…' : 'Create account'}
-          </button>
-        </form>
-
-        <p className="text-center text-sm text-muted mt-5">
-          Already have an account?{' '}
-          <Link to="/login" className="text-brand font-semibold">
-            Sign in
-          </Link>
-        </p>
-      </div>
+      <Footer />
     </div>
   );
 }
