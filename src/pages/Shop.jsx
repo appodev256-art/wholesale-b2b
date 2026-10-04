@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '../lib/firebase.js';
 import Header from '../components/Header.jsx';
+import Footer from '../components/Footer.jsx';
 
 function formatPrice(n) {
   return Number(n).toLocaleString('en-UG');
@@ -105,10 +106,10 @@ export default function Shop() {
   );
 
   return (
-    <div className="min-h-screen bg-paper">
+    <div className="min-h-screen flex flex-col bg-paper">
       <Header showSearch searchValue={search} onSearch={setSearch} />
 
-      <div className="mx-auto max-w-5xl px-4 py-6">
+      <main className="flex-1 mx-auto w-full max-w-5xl px-4 py-6">
         <h1 className="text-2xl font-bold mb-1">Browse products</h1>
         <p className="text-sm text-muted mb-5">
           Order directly from wholesalers on WhatsApp.
@@ -171,7 +172,9 @@ export default function Shop() {
             ))}
           </div>
         )}
-      </div>
+      </main>
+
+      <Footer />
     </div>
   );
 }
