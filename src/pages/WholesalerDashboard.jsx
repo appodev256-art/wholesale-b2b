@@ -13,6 +13,7 @@ import {
 import { auth, db } from '../lib/firebase.js';
 import Header from '../components/Header.jsx';
 import Footer from '../components/Footer.jsx';
+import { CATEGORIES } from '../lib/categories.js';
 
 const inputClass =
   'block w-full rounded-lg border border-line bg-paper px-3 py-2.5 text-base text-ink ' +
@@ -32,6 +33,7 @@ export default function WholesalerDashboard() {
   const [productName, setProductName] = useState('');
   const [price, setPrice] = useState('');
   const [unit, setUnit] = useState('');
+  const [category, setCategory] = useState(CATEGORIES[0]);
   const [imageUrl, setImageUrl] = useState('');
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
@@ -95,6 +97,8 @@ export default function WholesalerDashboard() {
     if (!Number.isFinite(priceNum) || priceNum <= 0 || !Number.isInteger(priceNum))
       return setFormError('Price must be a whole number greater than 0.');
     if (!trimmedUnit) return setFormError('Unit is required (e.g. Bale, Piece, Carton).');
+    if (!CATEGORIES.includes(category))
+      return setFormError('Please pick a category.');
     if (imageUrl && !/^https?:\/\//i.test(imageUrl.trim()))
       return setFormError('Image URL should start with http:// or https://');
 
@@ -108,6 +112,7 @@ export default function WholesalerDashboard() {
         productName: trimmedName,
         price: priceNum,
         unit: trimmedUnit,
+        category,
         imageUrl: imageUrl.trim() || '',
         createdAt: serverTimestamp(),
       };
@@ -118,6 +123,7 @@ export default function WholesalerDashboard() {
       setProductName('');
       setPrice('');
       setUnit('');
+      setCategory(CATEGORIES[0]);
       setImageUrl('');
       setShowForm(false);
     } catch (err) {
@@ -127,8 +133,6 @@ export default function WholesalerDashboard() {
       setSaving(false);
     }
   }
-
-  // ----- States -----
 
   if (loading) {
     return (
@@ -156,7 +160,6 @@ export default function WholesalerDashboard() {
     );
   }
 
-  // Rejected
   if (shop.rejected) {
     return (
       <div className="min-h-screen flex flex-col bg-paper">
@@ -180,7 +183,6 @@ export default function WholesalerDashboard() {
     );
   }
 
-  // Pending
   if (!shop.approved) {
     return (
       <div className="min-h-screen flex flex-col bg-paper">
@@ -204,7 +206,6 @@ export default function WholesalerDashboard() {
     );
   }
 
-  // Approved — full dashboard
   return (
     <div className="min-h-screen flex flex-col bg-paper">
       <Header />
@@ -273,6 +274,23 @@ export default function WholesalerDashboard() {
               </div>
               <div className="mb-3">
                 <label className="block mb-1.5 text-xs font-semibold text-muted">
+                  Category
+                </label>
+                <select
+                  className={inputClass}
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  required
+                >
+                  {CATEGORIES.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="mb-3">
+                <label className="block mb-1.5 text-xs font-semibold text-muted">
                   Image URL (optional)
                 </label>
                 <input
@@ -336,7 +354,7 @@ export default function WholesalerDashboard() {
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold truncate">{p.productName}</p>
                     <p className="text-sm text-muted">
-                      UGX {p.price.toLocaleString()} / {p.unit}
+                      {p.category || 'Other'} · UGX {p.price.toLocaleString()} / {p.unit}
                     </p>
                   </div>
                 </li>
