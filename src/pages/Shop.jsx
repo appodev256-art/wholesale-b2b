@@ -5,6 +5,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '../lib/firebase.js';
 import Header from '../components/Header.jsx';
 import Footer from '../components/Footer.jsx';
+import { CATEGORIES, getProductCategory } from '../lib/categories.js';
 
 function formatPrice(n) {
   return Number(n).toLocaleString('en-UG');
@@ -31,6 +32,7 @@ export default function Shop() {
   const [error, setError] = useState('');
   const [user, setUser] = useState(null);
   const [search, setSearch] = useState('');
+  const [activeCategory, setActiveCategory] = useState('All');
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => setUser(u));
@@ -101,9 +103,16 @@ export default function Shop() {
     window.open(link, '_blank', 'noopener,noreferrer');
   }
 
-  const visible = products.filter((p) =>
-    p.productName.toLowerCase().includes(search.trim().toLowerCase())
-  );
+  const q = search.trim().toLowerCase();
+
+  const visible = products.filter((p) => {
+    const matchesSearch = !q || p.productName.toLowerCase().includes(q);
+    const matchesCategory =
+      activeCategory === 'All' || getProductCategory(p) === activeCategory;
+    return matchesSearch && matchesCategory;
+  });
+
+  const tabs = ['All', ...CATEGORIES];
 
   return (
     <div className="min-h-screen flex flex-col bg-paper">
@@ -111,9 +120,26 @@ export default function Shop() {
 
       <main className="flex-1 mx-auto w-full max-w-5xl px-4 py-6">
         <h1 className="text-2xl font-bold mb-1">Browse products</h1>
-        <p className="text-sm text-muted mb-5">
+        <p className="text-sm text-muted mb-4">
           Order directly from wholesalers on WhatsApp.
         </p>
+
+        <div className="flex gap-2 overflow-x-auto pb-1 mb-5 -mx-1 px-1">
+          {tabs.map((c) => (
+            <button
+              key={c}
+              onClick={() => setActiveCategory(c)}
+              className={
+                'whitespace-nowrap rounded-full border px-4 py-2 text-sm font-semibold transition ' +
+                (activeCategory === c
+                  ? 'border-brand bg-brand text-white'
+                  : 'border-line bg-white text-muted hover:border-brand hover:text-brand')
+              }
+            >
+              {c}
+            </button>
+          ))}
+        </div>
 
         {loading && <p className="text-sm text-muted">Loading…</p>}
 
@@ -129,7 +155,11 @@ export default function Shop() {
 
         {!loading && !error && products.length > 0 && visible.length === 0 && (
           <div className="rounded-2xl border border-line bg-white p-6 text-center">
-            <p className="text-muted">No products match “{search}”.</p>
+            <p className="text-muted">
+              {q
+                ? `No products match “${search}”.`
+                : `No products in “${activeCategory}” yet.`}
+            </p>
           </div>
         )}
 
@@ -155,6 +185,9 @@ export default function Shop() {
                   )}
                 </div>
                 <div className="p-4">
+                  <p className="text-xs font-semibold text-muted mb-1">
+                    {getProductCategory(p)}
+                  </p>
                   <p className="font-semibold truncate">{p.productName}</p>
                   <p className="text-sm text-muted mb-1">{p.wholesalerShopName}</p>
                   <p className="font-bold text-ink">
