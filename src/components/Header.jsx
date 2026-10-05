@@ -1,10 +1,9 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../lib/firebase.js';
 
 export default function Header({ onSearch, searchValue = '', showSearch = false, minimal = false }) {
-  const navigate = useNavigate();
   const [user, setUser] = useState(null);
 
   useEffect(() => {
@@ -12,10 +11,7 @@ export default function Header({ onSearch, searchValue = '', showSearch = false,
     return unsub;
   }, []);
 
-  async function handleSignOut() {
-    await signOut(auth);
-    navigate('/shop', { replace: true });
-  }
+  const emailPrefix = user?.email ? user.email.split('@')[0] : '';
 
   return (
     <header className="border-b border-line bg-white sticky top-0 z-20">
@@ -42,17 +38,14 @@ export default function Header({ onSearch, searchValue = '', showSearch = false,
         {!minimal && (
           <div className="flex items-center gap-2 ml-auto shrink-0">
             {user ? (
-              <>
-                <span className="text-sm text-muted hidden sm:inline max-w-[160px] truncate">
-                  {user.email}
+              <div className="flex items-center gap-2 rounded-full border border-line bg-paper pl-1.5 pr-3 py-1">
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-soft text-sm">
+                  👤
                 </span>
-                <button
-                  onClick={handleSignOut}
-                  className="rounded-lg border border-line px-3 py-2 text-sm font-semibold text-brand hover:bg-paper"
-                >
-                  Sign out
-                </button>
-              </>
+                <span className="text-sm font-medium text-ink max-w-[120px] truncate">
+                  {emailPrefix}
+                </span>
+              </div>
             ) : (
               <>
                 <Link
