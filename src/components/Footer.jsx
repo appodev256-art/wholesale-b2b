@@ -1,7 +1,22 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { auth } from '../lib/firebase.js';
 
 export default function Footer() {
+  const navigate = useNavigate();
+  const [user, setUser] = useState(null);
   const year = new Date().getFullYear();
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (u) => setUser(u));
+    return unsub;
+  }, []);
+
+  async function handleSignOut() {
+    await signOut(auth);
+    navigate('/shop', { replace: true });
+  }
 
   return (
     <footer className="border-t border-line bg-white mt-8">
@@ -30,11 +45,23 @@ export default function Footer() {
                   Create an account
                 </Link>
               </li>
-              <li>
-                <Link to="/login" className="text-muted hover:text-brand">
-                  Sign in
-                </Link>
-              </li>
+              {!user && (
+                <li>
+                  <Link to="/login" className="text-muted hover:text-brand">
+                    Sign in
+                  </Link>
+                </li>
+              )}
+              {user && (
+                <li>
+                  <button
+                    onClick={handleSignOut}
+                    className="text-muted hover:text-brand"
+                  >
+                    Sign out
+                  </button>
+                </li>
+              )}
             </ul>
           </div>
 
