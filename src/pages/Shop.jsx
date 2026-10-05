@@ -119,10 +119,15 @@ export default function Shop() {
       <Header showSearch searchValue={search} onSearch={setSearch} />
 
       <main className="flex-1 mx-auto w-full max-w-5xl px-4 py-6">
-        <h1 className="text-2xl font-bold mb-1">Browse products</h1>
-        <p className="text-sm text-muted mb-4">
-          Order directly from wholesalers on WhatsApp.
-        </p>
+        <div className="mb-5 rounded-2xl border border-line bg-white p-6 sm:p-8">
+  <h1 className="text-2xl sm:text-3xl font-bold mb-2">
+    Buy wholesale, direct from the source.
+  </h1>
+  <p className="text-sm sm:text-base text-muted max-w-2xl">
+    Browse verified wholesalers, compare prices, and place your order
+    in one tap on WhatsApp. No account needed to look around.
+  </p>
+</div>
 
         <div className="flex gap-2 overflow-x-auto pb-1 mb-5 -mx-1 px-1">
           {tabs.map((c) => (
