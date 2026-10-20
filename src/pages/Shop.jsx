@@ -1,0 +1,228 @@
+import { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth, db } from '../lib/firebase.js';
+import Header from '../components/Header.jsx';
+import Footer from '../components/Footer.jsx';
+import { CATEGORIES, getProductCategory } from '../lib/categories.js';
+
+function formatPrice(n) {
+  return Number(n).toLocaleString('en-UG');
+}
+
+function buildWhatsAppLink({ number, shopName, productName, price, unit, retailerName }) {
+  const lines = [
+    `Hello ${shopName},`,
+    '',
+    `I'd like to order:`,
+    `• ${productName} — UGX ${Number(price).toLocaleString('en-UG')} / ${unit}`,
+    '',
+    `My name is ${retailerName}. Is it available?`,
+  ];
+  const text = encodeURIComponent(lines.join('\n'));
+  return `https://wa.me/${number}?text=${text}`;
+}
+
+export default function Shop() {
+  const navigate = useNavigate();
+
+  const [loading, setLoading] = useState(true);
+  const [products, setProducts] = useState([]);
+  const [error, setError] = useState('');
+  const [user, setUser] = useState(null);
+  const [search, setSearch] = useState('');
+  const [activeCategory, setActiveCategory] = useState('All');
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (u) => setUser(u));
+    return unsub;
+  }, []);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const wsSnap = await getDocs(
+          query(collection(db, 'wholesalers'), where('approved', '==', true))
+        );
+        const approvedIds = wsSnap.docs.map((d) => d.id);
+
+        if (approvedIds.length === 0) {
+          setProducts([]);
+          return;
+        }
+
+        const chunks = [];
+        for (let i = 0; i < approvedIds.length; i += 10) {
+          chunks.push(approvedIds.slice(i, i + 10));
+        }
+
+        const all = [];
+        for (const chunk of chunks) {
+          const pSnap = await getDocs(
+            query(collection(db, 'products'), where('wholesalerId', 'in', chunk))
+          );
+          pSnap.forEach((d) => all.push({ id: d.id, ...d.data() }));
+        }
+
+        all.sort((a, b) => {
+          const at = a.createdAt?.seconds ?? 0;
+          const bt = b.createdAt?.seconds ?? 0;
+          return bt - at;
+        });
+
+        setProducts(all);
+      } catch (err) {
+        console.error(err);
+        setError('Could not load the shop right now.');
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
+
+  function handleOrder(product) {
+    if (!user) {
+      navigate('/login?next=/shop');
+      return;
+    }
+
+    const retailerName =
+      user.displayName || user.email?.split('@')[0] || 'a buyer';
+
+    const link = buildWhatsAppLink({
+      number: product.wholesalerWhatsapp,
+      shopName: product.wholesalerShopName,
+      productName: product.productName,
+      price: product.price,
+      unit: product.unit,
+      retailerName,
+    });
+
+    window.open(link, '_blank', 'noopener,noreferrer');
+  }
+
+  const q = search.trim().toLowerCase();
+
+  const visible = products.filter((p) => {
+    const matchesSearch = !q || p.productName.toLowerCase().includes(q);
+    const matchesCategory =
+      activeCategory === 'All' || getProductCategory(p) === activeCategory;
+    return matchesSearch && matchesCategory;
+  });
+
+  const tabs = ['All', ...CATEGORIES];
+
+  return (
+    <div className="min-h-screen flex flex-col bg-paper">
+      <Header showSearch searchValue={search} onSearch={setSearch} />
+
+      <main className="flex-1 mx-auto w-full max-w-5xl px-4 py-6">
+        {/* Welcome banner with bulk order button */}
+        <div className="mb-5 rounded-2xl border border-line bg-white p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="max-w-2xl">
+            <h1 className="text-2xl sm:text-3xl font-bold mb-2">
+              Buy wholesale, direct from the source.
+            </h1>
+            <p className="text-sm sm:text-base text-muted">
+              Browse verified wholesalers, compare prices, and place your order
+              in one tap on WhatsApp. Or submit a bulk order form.
+            </p>
+          </div>
+          <Link
+            to="/order"
+            className="shrink-0 rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-white hover:opacity-90 text-center"
+          >
+            Place a bulk order
+          </Link>
+        </div>
+
+        {/* Categories */}
+        <div className="flex gap-2 overflow-x-auto pb-1 mb-5 -mx-1 px-1">
+          {tabs.map((c) => (
+            <button
+              key={c}
+              onClick={() => setActiveCategory(c)}
+              className={
+                'whitespace-nowrap rounded-full border px-4 py-2 text-sm font-semibold transition ' +
+                (activeCategory === c
+                  ? 'border-brand bg-brand text-white'
+                  : 'border-line bg-white text-muted hover:border-brand hover:text-brand')
+              }
+            >
+              {c}
+            </button>
+          ))}
+        </div>
+
+        {loading && <p className="text-sm text-muted">Loading…</p>}
+
+        {error && (
+          <p className="rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">{error}</p>
+        )}
+
+        {!loading && !error && products.length === 0 && (
+          <div className="rounded-2xl border border-line bg-white p-6 text-center">
+            <p className="text-muted">No products yet. Check back soon.</p>
+          </div>
+        )}
+
+        {!loading && !error && products.length > 0 && visible.length === 0 && (
+          <div className="rounded-2xl border border-line bg-white p-6 text-center">
+            <p className="text-muted">
+              {q
+                ? `No products match “${search}”.`
+                : `No products in “${activeCategory}” yet.`}
+            </p>
+          </div>
+        )}
+
+        {!loading && !error && visible.length > 0 && (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {visible.map((p) => (
+              <div
+                key={p.id}
+                className="overflow-hidden rounded-2xl border border-line bg-white"
+              >
+                <div className="aspect-square bg-paper flex items-center justify-center">
+                  {p.imageUrl ? (
+                    <img
+                      src={p.imageUrl}
+                      alt={p.productName}
+                      className="h-full w-full object-cover"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                      }}
+                    />
+                  ) : (
+                    <span className="text-muted text-sm">No image</span>
+                  )}
+                </div>
+                <div className="p-4">
+                  <p className="text-xs font-semibold text-muted mb-1">
+                    {getProductCategory(p)}
+                  </p>
+                  <p className="font-semibold truncate">{p.productName}</p>
+                  <p className="text-sm text-muted mb-1">{p.wholesalerShopName}</p>
+                  <p className="font-bold text-ink">
+                    UGX {formatPrice(p.price)}{' '}
+                    <span className="text-sm font-normal text-muted">/ {p.unit}</span>
+                  </p>
+                  <button
+                    onClick={() => handleOrder(p)}
+                    className="mt-3 w-full rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-white hover:opacity-90"
+                  >
+                    Order on WhatsApp
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </main>
+
+      <Footer />
+    </div>
+  );
+}
