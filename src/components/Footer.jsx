@@ -24,8 +24,8 @@ export default function Footer() {
         <div className="grid gap-6 sm:grid-cols-3 mb-6">
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <img src="/logo.png" alt="Wholesale B2B" className="h-7 w-7 object-contain" />
-              <span className="font-bold text-ink">Wholesale B2B</span>
+              <img src="/logo.png" alt="Optimum Inventory" className="h-7 w-7 object-contain" />
+              <span className="font-bold text-ink">Optimum Inventory</span>
             </div>
             <p className="text-sm text-muted">
               Connect with trusted wholesalers. Order directly on WhatsApp.
@@ -70,7 +70,7 @@ export default function Footer() {
             <ul className="space-y-1.5 text-sm">
               <li>
                 <Link to="/register" className="text-muted hover:text-brand">
-                  Sell on Wholesale B2B
+                  Sell on Optimum Inventory
                 </Link>
               </li>
               <li>
@@ -82,7 +82,7 @@ export default function Footer() {
 
         <div className="border-t border-line pt-5 flex flex-col sm:flex-row items-center justify-between gap-2">
           <p className="text-xs text-muted">
-            © {year} Wholesale B2B. All rights reserved.
+            © {year} Optimum Inventory. All rights reserved.
           </p>
           <p className="text-xs text-muted">
             Made in Uganda 🇺🇬
