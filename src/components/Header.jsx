@@ -17,9 +17,9 @@ export default function Header({ onSearch, searchValue = '', showSearch = false,
     <header className="border-b border-line bg-white sticky top-0 z-20">
       <div className="mx-auto max-w-5xl px-4 py-3 flex items-center gap-4">
         <Link to="/shop" className="flex items-center gap-2 shrink-0">
-          <img src="/logo.png" alt="Wholesale B2B" className="h-9 w-9 object-contain" />
+          <img src="/logo.png" alt="Optimum Inventory" className="h-9 w-9 object-contain" />
           <span className="font-bold text-lg text-ink hidden sm:inline">
-            Wholesale B2B
+            Optimum Inventory
           </span>
         </Link>
 
