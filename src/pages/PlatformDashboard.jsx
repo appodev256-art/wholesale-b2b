@@ -54,31 +54,80 @@ function ShopCard({ shop, onApprove, onReject, busy, showActions }) {
   );
 }
 
+function OrderCard({ order }) {
+  const totalItems = order.items?.length || 0;
+  
+  return (
+    <div className="rounded-xl border border-line bg-white p-4">
+      <div className="flex items-start justify-between gap-3 mb-2">
+        <div>
+          <p className="font-bold text-brand">{order.orderNumber || 'No Ref'}</p>
+          <p className="font-semibold truncate">{order.shopName}</p>
+          <p className="text-sm text-muted">{order.contactName} · {order.phone}</p>
+        </div>
+        <span className="text-xs text-muted whitespace-nowrap bg-paper px-2 py-1 rounded-md">
+          {formatDate(order.createdAt)}
+        </span>
+      </div>
+      
+      <div className="text-sm bg-paper p-3 rounded-lg mb-3">
+        <p className="font-semibold mb-1 text-ink">Items ({totalItems}):</p>
+        <ul className="list-disc pl-4 text-muted space-y-0.5">
+          {order.items?.map((item, i) => (
+            <li key={i}>
+              {item.quantity} {item.unit} × {item.productName} 
+              {item.requestedBrand ? ` (${item.requestedBrand})` : ''}
+            </li>
+          ))}
+        </ul>
+        {order.notes && (
+          <p className="mt-2 pt-2 border-t border-line text-ink">
+            <span className="font-semibold">Notes:</span> {order.notes}
+          </p>
+        )}
+      </div>
+      
+      <p className="text-sm text-muted mb-1"><span className="font-semibold text-ink">Deliver to:</span> {order.deliveryAddress}</p>
+      {order.email && <p className="text-sm text-muted">Email: {order.email}</p>}
+    </div>
+  );
+}
+
 export default function PlatformDashboard() {
   const [loading, setLoading] = useState(true);
   const [pending, setPending] = useState([]);
   const [approved, setApproved] = useState([]);
   const [rejected, setRejected] = useState([]);
   const [retailers, setRetailers] = useState([]);
+  const [orders, setOrders] = useState([]);
+  
   const [busyId, setBusyId] = useState(null);
   const [error, setError] = useState('');
 
   async function loadAll() {
     try {
-      const [wholesalersSnap, retailersSnap] = await Promise.all([
+      const [wholesalersSnap, retailersSnap, ordersSnap] = await Promise.all([
         getDocs(collection(db, 'wholesalers')),
         getDocs(query(collection(db, 'users'), where('role', '==', 'retailer'))),
+        getDocs(collection(db, 'orders')), // Fetch all orders
       ]);
 
       const allWholesalers = wholesalersSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
-
-      setPending(
-        allWholesalers.filter((s) => s.approved !== true && s.rejected !== true)
-      );
+      setPending(allWholesalers.filter((s) => s.approved !== true && s.rejected !== true));
       setApproved(allWholesalers.filter((s) => s.approved === true));
       setRejected(allWholesalers.filter((s) => s.rejected === true));
 
       setRetailers(retailersSnap.docs.map((d) => ({ id: d.id, ...d.data() })));
+
+      const allOrders = ordersSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      // Sort newest first
+      allOrders.sort((a, b) => {
+        const at = a.createdAt?.seconds ?? 0;
+        const bt = b.createdAt?.seconds ?? 0;
+        return bt - at;
+      });
+      setOrders(allOrders);
+      
     } catch (err) {
       console.error(err);
       setError('Could not load admin data. ' + (err?.message || ''));
@@ -142,12 +191,31 @@ export default function PlatformDashboard() {
       <main className="flex-1 mx-auto w-full max-w-3xl px-4 py-6 space-y-6">
         <div>
           <h1 className="text-2xl font-bold mb-1">Admin</h1>
-          <p className="text-sm text-muted">Manage wholesalers and retailers on the platform.</p>
+          <p className="text-sm text-muted">Manage wholesalers, retailers, and orders.</p>
         </div>
 
         {error && (
           <p className="rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">{error}</p>
         )}
+
+        {/* NEW: BULK ORDERS SECTION */}
+        <section>
+          <h2 className="text-lg font-bold mb-1">
+            Incoming Orders ({orders.length})
+          </h2>
+          <p className="text-sm text-muted mb-3">Orders submitted from the public order form.</p>
+          {orders.length === 0 ? (
+            <div className="rounded-xl border border-line bg-white p-4 text-sm text-muted">
+              No orders yet.
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {orders.map((order) => (
+                <OrderCard key={order.id} order={order} />
+              ))}
+            </div>
+          )}
+        </section>
 
         <section>
           <h2 className="text-lg font-bold mb-1">
