@@ -5,6 +5,7 @@ import Register from './pages/Register.jsx';
 import Shop from './pages/Shop.jsx';
 import WholesalerDashboard from './pages/WholesalerDashboard.jsx';
 import PlatformDashboard from './pages/PlatformDashboard.jsx';
+import OrderForm from './pages/OrderForm.jsx';
 
 function Loading() {
   return (
@@ -41,6 +42,7 @@ export default function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/shop" element={<Shop />} />
+      <Route path="/order" element={<OrderForm />} />
 
       <Route
         path="/platform"
